@@ -1,7 +1,7 @@
 units.push(
   {
     title: 'Types, keys, and patterns',
-    goal: 'Choose how to represent data, convert input safely, and match text.',
+    goal: 'Trace when PowerShell treats a value as text or a number. Validate input with patterns, find a price by a key, and use a typed list when you need a collection that grows. The challenge combines a format check, a catalog check, and arithmetic.',
     references: [
       ['PowerShell language reference', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/'],
       ['Everything about hashtables', 'https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-hashtable'],
@@ -11,7 +11,7 @@ units.push(
         id: 'types', title: 'Types, conversions, and missing values', time: 14,
         intro: 'Decide when input should stay text and when it needs to become a number.',
         notes: [
-          'Use .GetType().Name to inspect a value. [int] converts compatible text to a whole number. An invalid cast raises an error.',
+          'Use .GetType().Name to inspect a value. [int] converts compatible text to an integer and may round a fractional value. An invalid cast raises an error.',
           'The -as operator returns $null if the conversion fails. Put $null on the left of -eq when checking for missing values. Zero is a valid number, so test for $null explicitly.',
         ],
         file: 'types.ps1',
@@ -166,13 +166,14 @@ $names`,
         practice: [{
           title: 'Price a valid order',
           review: 'Unit 4 · Patterns, keys, and conversion. Units 1–2 · Math, input, and decisions.',
-          task: 'Use a hashtable with TEA-01 at 3 and MUG-02 at 7. Ask for a Code and Quantity. A code must match three letters, a dash, and two digits, and must exist in the catalog. The quantity must convert to a positive integer. Print the total for TEA-01 and 4, then test with BAD and 4.',
+          task: 'Use a hashtable with TEA-01 at 3 and MUG-02 at 7. Ask for a Code and Quantity. A code must match three letters, a dash, and two digits, and must exist in the catalog. The quantity must contain only digits and convert to an integer greater than zero. Print the total for TEA-01 and 4, then test with BAD and 4.',
           expected: 'Code: TEA-01\nQuantity: 4\nTotal: 12\n\nCode: BAD\nQuantity: 4\nInvalid order.',
           expectedLabel: 'Two runs separated by a blank line',
-          hint: 'Build $validCode with -match and ContainsKey joined by -and. Convert the quantity with -as [int], then check $validCode and whether the quantity is greater than 0. Return a clear message when any check fails.',
+          hint: 'Build $validCode with -match and ContainsKey joined by -and. Check that the quantity text matches only digits before accepting the conversion with -as [int]. Require a valid code and a converted quantity greater than 0. Return a clear message when any check fails.',
           solution: `$prices = @{ "TEA-01" = 3; "MUG-02" = 7 }
 $code = Read-Host "Code"
-$quantity = (Read-Host "Quantity") -as [int]
+$quantityText = Read-Host "Quantity"
+$quantity = if ($quantityText -match "^[0-9]+$") { $quantityText -as [int] }
 $validCode = $code -match "^[A-Z]{3}-[0-9]{2}$" -and $prices.ContainsKey($code)
 if ($validCode -and $quantity -gt 0) {
     $total = $prices[$code] * $quantity
@@ -186,7 +187,7 @@ if ($validCode -and $quantity -gt 0) {
   },
   {
     title: 'Objects and pipelines',
-    goal: 'Build, inspect, filter, and summarize objects before deciding how to display them.',
+    goal: 'Follow objects through a pipeline. Inspect their fields, filter on a numeric field, group related records, and measure each group. Keep the results structured so you can sort them before formatting.',
     references: [
       ['About pipelines', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_pipelines'],
       ['Discovering objects with Get-Member', 'https://learn.microsoft.com/powershell/scripting/learn/ps101/03-discovering-objects'],
@@ -340,7 +341,7 @@ $summary | Sort-Object Total -Descending |
   },
   {
     title: 'Files and structured data',
-    goal: 'Work with portable paths, discover files, and round-trip objects through CSV and JSON.',
+    goal: 'See which information survives when an object leaves PowerShell. A CSV preserves columns but imports numeric cells as text. JSON can preserve nested structure and numeric values. Use portable paths to read and verify both files.',
     references: [
       ['About providers', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_providers'],
       ['Export-Csv', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/export-csv'],
@@ -503,7 +504,7 @@ foreach ($row in $loaded) {
 units.push(
   {
     title: 'Functions, modules, and classes',
-    goal: 'Build reusable commands that accept validated input and work in a pipeline.',
+    goal: 'Declare a command’s inputs, then watch PowerShell bind one pipeline item at a time. Pass values across scopes explicitly, package public functions in a module, and use an enum and class when the data needs a fixed shape and behavior.',
     references: [
       ['Advanced functions', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_functions_advanced'],
       ['How to write a script module', 'https://learn.microsoft.com/powershell/scripting/developer/module/how-to-write-a-powershell-script-module'],
@@ -773,7 +774,7 @@ Import-Module $path -Force
   },
   {
     title: 'Errors, debugging, and tests',
-    goal: 'Handle failures deliberately, trace execution, and verify behavior with repeatable tests.',
+    goal: 'Follow what happens after a command fails. Identify which errors enter catch, keep diagnostic messages separate from results, and write boundary and failure tests that prove the code behaves as intended.',
     references: [
       ['About try, catch, and finally', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_try_catch_finally'],
       ['About output streams', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_output_streams'],
@@ -974,8 +975,8 @@ $result = Invoke-Pester -Path $testPath -Output None -PassThru
           {
             title: 'Test accepted and rejected input',
             review: 'Unit 4 · Conversions; this unit · Terminating errors and boundary checks',
-            task: 'Use BeforeAll to define a parser that accepts whole numbers 1 or greater and throws on bad or nonpositive input. Write one test for 1 and one test that checks rejected input. Print both the passed and failed counts.',
-            expected: 'Passed: 2\nFailed: 0',
+            task: 'Use BeforeAll to define a parser that accepts whole numbers 1 or greater and throws on bad or nonpositive input. Write one test for 1 and two tests for rejected inputs, using 0 and 1.5. Print both the passed and failed counts.',
+            expected: 'Passed: 3\nFailed: 0',
             hint: 'For the error case, pipe a script block to Should -Throw. That lets Pester run the code and catch the error itself.',
             solution: `Import-Module -FullyQualifiedName @{ ModuleName = "Pester"; ModuleVersion = "5.0.0" }
 $testPath = Join-Path $PSScriptRoot "PesterPositive.Tests.ps1"
@@ -983,7 +984,7 @@ $testPath = Join-Path $PSScriptRoot "PesterPositive.Tests.ps1"
 BeforeAll {
     function ConvertTo-PositiveNumber {
         param([string]$Text)
-        $number = $Text -as [int]
+        $number = if ($Text -match "^[0-9]+$") { $Text -as [int] }
         if ($null -eq $number -or $number -le 0) { throw "Expected a positive number." }
         $number
     }
@@ -991,6 +992,7 @@ BeforeAll {
 Describe "Positive number parsing" {
     It "accepts one" { (ConvertTo-PositiveNumber "1") | Should -Be 1 }
     It "rejects zero" { { ConvertTo-PositiveNumber "0" } | Should -Throw }
+    It "rejects fractions" { { ConvertTo-PositiveNumber "1.5" } | Should -Throw }
 }
 '@ | Set-Content -LiteralPath $testPath
 $result = Invoke-Pester -Path $testPath -Output None -PassThru
@@ -1006,21 +1008,23 @@ $result = Invoke-Pester -Path $testPath -Output None -PassThru
         practice: [{
           title: 'Detect invalid input and test the failure',
           review: 'Unit 8 · Terminating errors and assertions. Units 4 and 7 · Conversion and functions.',
-          task: 'Write ConvertTo-LabCount, which accepts text and returns an integer unless it is invalid or negative. Throw “Invalid count” for invalid input. Assert that "0" returns 0 and "3" returns 3. Test that "tea" raises the expected error. If "tea" is accepted or raises a different error, the test should fail.',
-          expected: '3 checks passed.',
-          hint: 'Use -as [int] and test explicitly for $null. In the invalid-input test, set an error variable in catch and assert on it outside catch, so your own assertion cannot be mistaken for the parser’s error.',
+          task: 'Write ConvertTo-LabCount, which accepts text containing only digits and returns a nonnegative integer. Reject anything that does not fit in that type. Throw “Invalid count” for invalid input. Assert that "0" returns 0 and "3" returns 3. Test that "tea" and "1.5" raise the expected error. If either is accepted or raises a different error, the test should fail.',
+          expected: '4 checks passed.',
+          hint: 'Check the digit format first, then use -as [int] and test explicitly for $null. For each invalid input, set an error variable in catch and assert on it outside catch, so your own assertion cannot be mistaken for the parser’s error.',
           solution: `function ConvertTo-LabCount {
     param([string]$Text)
-    $value = $Text -as [int]
-    if ($null -eq $value -or $value -lt 0) { throw "Invalid count" }
+    $value = if ($Text -match "^[0-9]+$") { $Text -as [int] }
+    if ($null -eq $value) { throw "Invalid count" }
     $value
 }
 if ((ConvertTo-LabCount "0") -ne 0) { throw "Expected zero" }
 if ((ConvertTo-LabCount "3") -ne 3) { throw "Expected three" }
-$failure = $null
-try { $null = ConvertTo-LabCount "tea" } catch { $failure = $_.Exception.Message }
-if ($failure -ne "Invalid count") { throw "Expected Invalid count" }
-"3 checks passed."`,
+foreach ($invalid in @("tea", "1.5")) {
+    $failure = $null
+    try { $null = ConvertTo-LabCount $invalid } catch { $failure = $_.Exception.Message }
+    if ($failure -ne "Invalid count") { throw "Incorrect result for $invalid" }
+}
+"4 checks passed."`,
         }],
       },
     ],

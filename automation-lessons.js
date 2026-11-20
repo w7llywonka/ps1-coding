@@ -1,7 +1,7 @@
 units.push(
   {
     title: 'The shell, tools, and APIs',
-    goal: 'Discover commands, call programs, and bring data from a web API into a script.',
+    goal: 'Use command metadata and help to discover an interface. When you call a program, build its arguments explicitly and check the exit status. When you call an API, inspect the returned fields and verify the same reporting logic against offline data.',
     references: [
       ['About profiles', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_profiles'],
       ['About native command parsing', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_parsing'],
@@ -147,7 +147,7 @@ if ($Live) {
   },
   {
     title: 'Jobs, parallel work, and remoting',
-    goal: 'Choose where work runs, pass values explicitly, and collect results.',
+    goal: 'Compare a separate job process with parallel runspaces and an already configured remote session. Pass inputs at the boundary, return objects with usable fields, and sort output after workers finish.',
     references: [
       ['About jobs', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_jobs'],
       ['ForEach-Object and parallel execution', 'https://learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object'],
@@ -307,7 +307,7 @@ Set-Content -LiteralPath $second -Value @("one", "two", "three")
 units.push(
   {
     title: 'System administration',
-    goal: 'Inspect processes, services, system information, and logs before making changes.',
+    goal: 'Read system state through process, service, CIM, and event objects. Separate collection from reporting so you can develop on sample data and distinguish a stopped service from a missing one.',
     references: [
       ['Managing processes with PowerShell', 'https://learn.microsoft.com/powershell/scripting/samples/managing-processes-with-process-cmdlets'],
       ['Get-CimInstance', 'https://learn.microsoft.com/powershell/module/cimcmdlets/get-ciminstance'],
@@ -489,7 +489,7 @@ Import-Csv -LiteralPath $path | ForEach-Object { "$($_.Name): $($_.State)" }`,
   },
   {
     title: 'Safe, repeatable automation',
-    goal: 'Preview changes, keep secrets out of output, and run scripts unattended with clear success and failure signals.',
+    goal: 'Check configuration before work begins. Preview file changes and skip a write when a rerun would produce the same content. Then verify the report and its exit status through the same command a schedule would run.',
     references: [
       ['The ShouldProcess pattern', 'https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-shouldprocess'],
       ['PowerShell SecretManagement overview', 'https://learn.microsoft.com/powershell/utility-modules/secretmanagement/overview'],
@@ -544,10 +544,12 @@ Set-LabNote -Path $path -WhatIf
             solution: `function Set-LabNote {
     [CmdletBinding(SupportsShouldProcess)]
     param([string]$Path)
-    if ((Test-Path -LiteralPath $Path -PathType Leaf) -and
-        ((Get-Content -LiteralPath $Path -Raw).TrimEnd() -ceq "Ready")) {
-        "Already current"
-        return
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        $existing = @(Get-Content -LiteralPath $Path -ErrorAction Stop)
+        if ($existing.Count -eq 1 -and $existing[0] -ceq "Ready") {
+            "Already current"
+            return
+        }
     }
     if ($PSCmdlet.ShouldProcess($Path, "Write the lab note")) {
         Set-Content -LiteralPath $Path -Value "Ready"

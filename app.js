@@ -39,11 +39,14 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => entities[character]);
 }
 
-function codeBlock(file, code, label) {
+function codeBlock(file, code, label, numbered = false) {
   const name = escapeHtml(label);
+  const source = numbered
+    ? code.split('\n').map((line) => `<span class="code-line">${escapeHtml(line)}</span>`).join('\n')
+    : escapeHtml(code);
   return `<div class="code-block">
     <div class="code-bar"><span>${escapeHtml(file)}</span><button class="copy" type="button" aria-label="Copy ${name}">Copy</button></div>
-    <pre tabindex="0" aria-label="${name}"><code>${escapeHtml(code)}</code></pre>
+    <pre tabindex="0" aria-label="${name}"><code>${source}</code></pre>
     <span class="visually-hidden" role="status"></span>
   </div>`;
 }
@@ -91,6 +94,42 @@ function renderNavigation(currentId) {
   document.querySelector('#progress-label').textContent = `${progress.completed.size} of ${lessons.length} complete`;
 }
 
+function workedExampleGuide(lesson) {
+  const { steps, trace, troubleshoot } = walkthroughs[lesson.id];
+  const code = lesson.example.split('\n');
+  return `<section class="walkthrough" aria-labelledby="walkthrough-title">
+    <h3 id="walkthrough-title">Walk through the code</h3>
+    <ol class="walkthrough-steps">${steps.map(([start, end, explanation]) => {
+      const label = start === end ? `Line ${start}` : `Lines ${start}–${end}`;
+      const excerpt = code.slice(start - 1, end).join('\n');
+      return `<li class="walkthrough-step">
+        <h4>${label}</h4>
+        <pre><code>${escapeHtml(excerpt)}</code></pre>
+        <p>${escapeHtml(explanation)}</p>
+      </li>`;
+    }).join('')}</ol>
+    <div class="walkthrough-note">
+      <h4>Follow the result</h4>
+      <p>${escapeHtml(trace)}</p>
+    </div>
+    <div class="walkthrough-note">
+      <h4>If you get stuck</h4>
+      <p>${escapeHtml(troubleshoot)}</p>
+    </div>
+  </section>`;
+}
+
+function challengeGuide(id) {
+  return `<section class="checkpoints" aria-labelledby="checkpoints-title">
+    <h3 id="checkpoints-title">Build and check it in stages</h3>
+    <ol>${challengeCheckpoints[id].map(([title, action, check]) => `<li>
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(action)}</p>
+      <p class="checkpoint-check"><strong>Check</strong> · ${escapeHtml(check)}</p>
+    </li>`).join('')}</ol>
+  </section>`;
+}
+
 function practiceProblem(problem, index, lesson) {
   const heading = lesson.challenge ? problem.title : `${index + 1}. ${problem.title}`;
   const tag = lesson.challenge ? 'h2' : 'h3';
@@ -98,6 +137,7 @@ function practiceProblem(problem, index, lesson) {
     <${tag}>${escapeHtml(heading)}</${tag}>
     ${problem.review ? `<p class="practice-review"><strong>Skills used</strong> · ${escapeHtml(problem.review)}</p>` : ''}
     <p>${escapeHtml(problem.task)}</p>
+    ${lesson.challenge ? challengeGuide(lesson.id) : ''}
     ${outputBlock(problem.expected, problem.expectedLabel ?? 'Expected output')}
     <details><summary>Show a hint</summary><p>${escapeHtml(problem.hint)}</p></details>
     <details><summary>Show one solution</summary>${codeBlock(lesson.file, problem.solution, `${problem.title} solution`)}</details>
@@ -125,8 +165,9 @@ function renderLesson(lesson, moveFocus = false) {
       <h2 id="example-title">Worked example</h2>
       <ul class="notes">${lesson.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>
       ${lesson.setup ? '' : runInstructions}
-      ${codeBlock(lesson.file, lesson.example, 'example code')}
+      ${codeBlock(lesson.file, lesson.example, 'example code', true)}
       ${outputBlock(lesson.exampleOutput, lesson.exampleOutputLabel ?? 'Example output')}
+      ${workedExampleGuide(lesson)}
     </section>`}
     <section class="lesson-section" aria-label="Practice">
       ${lesson.challenge ? '' : '<h2>Try it yourself</h2>'}

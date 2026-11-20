@@ -16,7 +16,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
-h1, h2, h3, p, pre { margin: 0; }
+h1, h2, h3, h4, p, pre { margin: 0; }
 a { color: var(--blue); }
 button, summary { cursor: pointer; }
 button { font: inherit; }
@@ -87,10 +87,13 @@ details > p, details > ol { margin: 10px 0 0; }
 .setup li + li { margin-top: 8px; }
 pre { overflow-x: auto; font: .9rem/1.65 var(--mono); tab-size: 4; }
 pre code { font: inherit; }
-p code, li code { font-family: var(--mono); font-size: .88em; background: var(--blue-soft); color: #203b70; padding: .12em .3em; border-radius: 4px; overflow-wrap: anywhere; }
+p code, li > code { font-family: var(--mono); font-size: .88em; background: var(--blue-soft); color: #203b70; padding: .12em .3em; border-radius: 4px; overflow-wrap: anywhere; }
 .code-block { overflow: hidden; border-radius: 10px; background: #19243a; color: #ecf2ff; }
 .code-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #24314b; padding: 8px 14px; color: #e3ebfc; font: .8rem var(--mono); }
 .code-block pre { padding: 15px 16px; }
+.code-block code { counter-reset: code-line; }
+.code-line { position: relative; padding-left: 3ch; counter-increment: code-line; }
+.code-line::before { position: absolute; left: 0; color: #b7c7e4; content: counter(code-line); user-select: none; }
 .copy {
   padding: 3px 9px;
   border: 1px solid #8495b7;
@@ -104,6 +107,16 @@ p code, li code { font-family: var(--mono); font-size: .88em; background: var(--
 .output { margin: 12px 0 0; }
 .output figcaption { font-size: .8rem; font-weight: 700; color: var(--muted); margin: 0 0 5px; }
 .output pre { border: 1px solid var(--line); background: #f2f5fa; border-radius: 8px; padding: 9px 12px; }
+.walkthrough { margin-top: 24px; }
+.walkthrough-steps { list-style: none; margin: 8px 0 12px; padding: 0; }
+.walkthrough-step { padding: 14px 0; border-top: 1px solid var(--line); }
+.walkthrough-step h4 { color: var(--muted); font: 700 .78rem/1.4 var(--mono); }
+.walkthrough-step pre { margin: 5px 0 8px; padding: 7px 10px; background: #edf1f7; border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.walkthrough-note { margin-top: 10px; padding: 10px 14px; border-left: 3px solid #a5bbe0; background: var(--blue-soft); border-radius: 0 6px 6px 0; }
+.checkpoints { margin-top: 20px; }
+.checkpoints ol { margin: 8px 0 0; padding-left: 24px; }
+.checkpoints li + li { margin-top: 12px; }
+.checkpoint-check { color: var(--muted); margin-top: 3px; }
 .practice details { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 13px; }
 .practice details summary { font-size: .9rem; color: var(--blue); }
 .practice details .code-block { margin-top: 10px; }

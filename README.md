@@ -6,8 +6,8 @@ Write your first `.ps1` file, then work through the language, its object pipelin
 
 1. Download or clone this repository and open `index.html` in a browser. There is no build step.
 2. Install [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell) and use a plain-text editor. The first lesson shows how to set up a practice folder and run a script.
-3. Run the worked example in PowerShell. Try the first problem on the new skill, then solve a harder problem that brings in earlier skills. Compare your output before opening the hint or solution.
-4. Finish the unit challenge and test the script with a different input or case. The browser saves submissions marked complete on the same device when local storage is available.
+3. Run the worked example in PowerShell. Read the walkthrough to see what each line does, follow the values through the script, and compare your result. Then try the focused exercise and the harder problem that brings in earlier skills.
+4. Build the unit challenge one stage at a time. Use the checkpoints to verify intermediate results before opening the solution. The browser saves progress on the same device when local storage is available.
 
 Most exercises run locally on Windows, macOS, or Linux. The course labels exercises that need a public API, Windows, or Pester. Remoting exercises run locally first, and the unit reference links to setup for an authorized remote host.
 

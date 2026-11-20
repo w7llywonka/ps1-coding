@@ -1,7 +1,7 @@
 const units = [
   {
     title: 'Script basics',
-    goal: 'Write and run a script that stores values, builds messages, and calculates a result.',
+    goal: 'Start by saving and rerunning one command. Then store a value, insert it into text, and calculate a new value from two numeric inputs. In the challenge, you will change a single quantity and see both receipt lines update.',
     lessons: [
       {
         id: 'first-script',
@@ -202,7 +202,7 @@ Write-Output "Total: $total"`,
   },
   {
     title: 'Decisions and loops',
-    goal: 'Read input, make decisions, and repeat work for every item in a list.',
+    goal: 'Read an answer first, then turn it into a decision with if and else. Arrays let you store several inputs, and a loop applies that decision to each one. You will use all four ideas to count sessions that reach a chosen goal.',
     lessons: [
       {
         id: 'input',
@@ -432,7 +432,7 @@ Write-Output "Sessions that met the goal: $met"`,
   },
   {
     title: 'Reusable scripts and reports',
-    goal: 'Connect commands, write reusable functions, and save a report you can check.',
+    goal: 'Pass a list through a pipeline that sorts and selects values. Move a calculation into a function so it can run for every input, then send the formatted results to a text file that you can read back.',
     lessons: [
       {
         id: 'pipeline',
