@@ -16,7 +16,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
-h1, h2, p, pre { margin: 0; }
+h1, h2, h3, p, pre { margin: 0; }
 a { color: var(--blue); }
 button, summary { cursor: pointer; }
 button { font: inherit; }
@@ -55,7 +55,11 @@ progress::-moz-progress-bar { background: var(--blue); border-radius: 12px; }
 .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 56px; max-width: 1120px; padding: 44px 24px 72px; margin: auto; }
 .sidebar { align-self: start; }
 .sidebar summary { font-size: .95rem; font-weight: 750; margin-bottom: 12px; }
-.sidebar h2 { font-size: .78rem; color: var(--muted); font-weight: 700; margin: 18px 0 5px; }
+.unit { border-top: 1px solid var(--line); padding: 10px 0; }
+.sidebar .unit summary { font-size: .83rem; margin: 0; }
+.unit-title { overflow-wrap: anywhere; }
+.unit-meta { display: block; padding-left: 1em; color: var(--muted); font-size: .75rem; font-weight: 500; }
+.sidebar .unit ol { margin-top: 6px; }
 .sidebar ol { list-style: none; padding: 0; margin: 0; }
 .sidebar a { display: flex; align-items: baseline; gap: 10px; padding: 8px 9px; border-radius: 8px; font-size: .9rem; text-decoration: none; color: var(--text); }
 .sidebar a:hover { background: #e9edf4; }
@@ -66,11 +70,14 @@ main { min-width: 0; max-width: 760px; }
 .lesson-meta { color: var(--blue); font-size: .875rem; font-weight: 700; margin-bottom: 9px; }
 h1 { font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.13; letter-spacing: -.04em; }
 h2 { font-size: 1.22rem; line-height: 1.35; }
+h3 { font-size: 1rem; line-height: 1.4; margin-bottom: 6px; }
+.lesson-step { color: var(--muted); font-size: .875rem; margin-top: 6px; }
 .intro { color: var(--muted); max-width: 62ch; font-size: 1.13rem; margin-top: 12px; }
+.unit-goal { color: var(--muted); margin-top: 12px; }
 .lesson-section { margin-top: 28px; }
 .lesson-section h2 { margin-bottom: 10px; }
 .notes { padding-left: 22px; margin: 0 0 16px; }
-p.notes { padding-left: 0; }
+.run-instructions { margin: 16px 0; }
 .notes li + li { margin-top: 6px; }
 .setup, .practice, .check, .course-complete { border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 16px 20px; }
 .setup { margin-top: 22px; }
@@ -100,6 +107,8 @@ p code, li code { font-family: var(--mono); font-size: .88em; background: var(--
 .practice details { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 13px; }
 .practice details summary { font-size: .9rem; color: var(--blue); }
 .practice details .code-block { margin-top: 10px; }
+.practice + .practice { margin-top: 12px; }
+.practice-review { color: var(--muted); font-size: .85rem; margin-bottom: 8px; }
 fieldset { margin: 0; padding: 0; border: none; min-width: 0; }
 legend { padding: 0; margin-bottom: 10px; }
 .choice { display: flex; gap: 10px; align-items: baseline; width: fit-content; padding: 5px 0; cursor: pointer; }
@@ -133,7 +142,7 @@ legend { padding: 0; margin-bottom: 10px; }
   .progress progress { display: none; }
   .layout { display: block; padding: 20px 16px 48px; }
   .sidebar { margin-bottom: 24px; }
-  .sidebar details { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+  .sidebar > details { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
   .sidebar summary { margin: 0; }
   .practice, .check, .setup, .course-complete { padding: 14px; }
 }

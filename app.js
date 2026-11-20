@@ -1,4 +1,9 @@
-const lessons = course.flatMap((group) => group.lessons);
+const lessons = units.flatMap((unit, index) => unit.lessons.map((lesson, step) => ({
+  ...lesson,
+  unit,
+  unitNumber: index + 1,
+  step: step + 1,
+})));
 const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
 const storageKey = 'ps1-coding-course-v1';
 const nav = document.querySelector('#lesson-nav');
@@ -35,9 +40,10 @@ function escapeHtml(value) {
 }
 
 function codeBlock(file, code, label) {
+  const name = escapeHtml(label);
   return `<div class="code-block">
-    <div class="code-bar"><span>${escapeHtml(file)}</span><button class="copy" type="button" aria-label="Copy ${label}">Copy</button></div>
-    <pre tabindex="0" aria-label="${label}"><code>${escapeHtml(code)}</code></pre>
+    <div class="code-bar"><span>${escapeHtml(file)}</span><button class="copy" type="button" aria-label="Copy ${name}">Copy</button></div>
+    <pre tabindex="0" aria-label="${name}"><code>${escapeHtml(code)}</code></pre>
     <span class="visually-hidden" role="status"></span>
   </div>`;
 }
@@ -52,7 +58,7 @@ function outputBlock(output, label) {
 const setup = `<details class="setup">
   <summary>Set up your practice folder</summary>
   <ol>
-    <li>Open PowerShell. On Windows, search for PowerShell in Start. On macOS or Linux, <a href="https://learn.microsoft.com/powershell/scripting/install/installing-powershell">install PowerShell</a> and type <code>pwsh</code> in your terminal.</li>
+    <li><a href="https://learn.microsoft.com/powershell/scripting/install/installing-powershell">Install PowerShell 7</a>, then type <code>pwsh</code> in your terminal. Run <code>$PSVersionTable.PSVersion</code> to check the version.</li>
     <li>In PowerShell, run <code>New-Item -ItemType Directory -Path ps1-practice</code> to create a folder in your current location, then run <code>Set-Location ps1-practice</code> to enter it. If the folder already exists, start with <code>Set-Location ps1-practice</code>.</li>
     <li>Use a plain-text editor to save <code>hello.ps1</code> in that folder. In Windows Notepad, select <strong>All files</strong> as the file type so it keeps the <code>.ps1</code> extension.</li>
     <li>If PowerShell reports that it has blocked script execution, see <a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_execution_policies">Microsoft’s execution policy guide</a> for your environment.</li>
@@ -60,18 +66,24 @@ const setup = `<details class="setup">
 </details>`;
 
 function renderNavigation(currentId) {
-  let index = 0;
-  nav.innerHTML = course.map((group) => `<section>
-    <h2>${escapeHtml(group.title)}</h2>
-    <ol>${group.lessons.map((lesson) => {
-      const number = String(++index).padStart(2, '0');
-      const done = progress.completed.has(lesson.id);
-      return `<li><a href="#${lesson.id}"${lesson.id === currentId ? ' aria-current="page"' : ''}>
-        <span class="lesson-number${done ? ' done' : ''}" aria-hidden="true">${done ? '✓' : number}</span>
-        <span>${escapeHtml(lesson.title)}${done ? '<span class="visually-hidden"> (completed)</span>' : ''}</span>
-      </a></li>`;
-    }).join('')}</ol>
-  </section>`).join('');
+  nav.innerHTML = units.map((unit, index) => {
+    const active = unit.lessons.some((lesson) => lesson.id === currentId);
+    const complete = unit.lessons.filter((lesson) => progress.completed.has(lesson.id)).length;
+    return `<details class="unit" name="course-unit"${active ? ' open' : ''}>
+      <summary>
+        <span class="unit-title">Unit ${index + 1} · ${escapeHtml(unit.title)}</span>
+        <span class="unit-meta">${complete} of ${unit.lessons.length} complete</span>
+      </summary>
+      <ol>${unit.lessons.map((lesson, step) => {
+        const number = lesson.challenge ? '◇' : String(step + 1).padStart(2, '0');
+        const done = progress.completed.has(lesson.id);
+        return `<li><a href="#${lesson.id}"${lesson.id === currentId ? ' aria-current="page"' : ''}>
+          <span class="lesson-number${done ? ' done' : ''}" aria-hidden="true">${done ? '✓' : number}</span>
+          <span>${escapeHtml(lesson.title)}${done ? '<span class="visually-hidden"> (completed)</span>' : ''}</span>
+        </a></li>`;
+      }).join('')}</ol>
+    </details>`;
+  }).join('');
 
   const bar = document.querySelector('#progress');
   bar.max = lessons.length;
@@ -79,33 +91,48 @@ function renderNavigation(currentId) {
   document.querySelector('#progress-label').textContent = `${progress.completed.size} of ${lessons.length} complete`;
 }
 
+function practiceProblem(problem, index, lesson) {
+  const heading = lesson.challenge ? problem.title : `${index + 1}. ${problem.title}`;
+  const tag = lesson.challenge ? 'h2' : 'h3';
+  return `<div class="practice">
+    <${tag}>${escapeHtml(heading)}</${tag}>
+    ${problem.review ? `<p class="practice-review"><strong>Skills used</strong> · ${escapeHtml(problem.review)}</p>` : ''}
+    <p>${escapeHtml(problem.task)}</p>
+    ${outputBlock(problem.expected, problem.expectedLabel ?? 'Expected output')}
+    <details><summary>Show a hint</summary><p>${escapeHtml(problem.hint)}</p></details>
+    <details><summary>Show one solution</summary>${codeBlock(lesson.file, problem.solution, `${problem.title} solution`)}</details>
+  </div>`;
+}
+
 function renderLesson(lesson, moveFocus = false) {
   const index = lessons.indexOf(lesson);
   const previous = lessons[index - 1];
-  const next = lessons[index + 1];
+  const next = lessons[index + 1] ?? lessons.find((entry) => entry !== lesson && !progress.completed.has(entry.id));
   const done = progress.completed.has(lesson.id);
   const allDone = progress.completed.size === lessons.length;
-  document.title = `${lesson.title} · PowerShell Basics`;
+  const step = lesson.challenge ? 'Unit challenge' : `Lesson ${lesson.step} of ${lesson.unit.lessons.length - 1}`;
+  const runInstructions = `<p class="run-instructions">Save as <code>${escapeHtml(lesson.file)}</code> and run <code>./${escapeHtml(lesson.file)}</code> in PowerShell.</p>`;
+  document.title = `${lesson.title} · Learn PowerShell`;
   main.innerHTML = `
-    <p class="lesson-meta">Lesson ${index + 1} of ${lessons.length} · ${lesson.time} min</p>
+    <p class="lesson-meta">Unit ${lesson.unitNumber} · ${escapeHtml(lesson.unit.title)}</p>
     <h1 id="lesson-title" tabindex="-1">${escapeHtml(lesson.title)}</h1>
+    <p class="lesson-step">${step} · ${lesson.time} min</p>
     <p class="intro">${escapeHtml(lesson.intro)}</p>
+    ${lesson.step === 1 ? `<p class="unit-goal"><strong>Unit goal</strong> · ${escapeHtml(lesson.unit.goal)}</p>` : ''}
+    ${lesson.requirements ? `<p class="unit-goal"><strong>Setup</strong> · ${escapeHtml(lesson.requirements)}</p>` : ''}
     ${lesson.setup ? setup : ''}
-    <section class="lesson-section" aria-labelledby="example-title">
+    ${lesson.challenge ? runInstructions : `<section class="lesson-section" aria-labelledby="example-title">
       <h2 id="example-title">Worked example</h2>
       <ul class="notes">${lesson.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>
-      ${lesson.setup ? '' : `<p class="notes">Save as <code>${escapeHtml(lesson.file)}</code> and run <code>./${escapeHtml(lesson.file)}</code> in PowerShell.</p>`}
+      ${lesson.setup ? '' : runInstructions}
       ${codeBlock(lesson.file, lesson.example, 'example code')}
-      ${outputBlock(lesson.exampleOutput, 'Example output')}
+      ${outputBlock(lesson.exampleOutput, lesson.exampleOutputLabel ?? 'Example output')}
+    </section>`}
+    <section class="lesson-section" aria-label="Practice">
+      ${lesson.challenge ? '' : '<h2>Try it yourself</h2>'}
+      ${lesson.practice.map((problem, index) => practiceProblem(problem, index, lesson)).join('')}
     </section>
-    <section class="lesson-section practice" aria-labelledby="practice-title">
-      <h2 id="practice-title">Try it yourself</h2>
-      <p>${escapeHtml(lesson.task)}</p>
-      ${outputBlock(lesson.expected, lesson.expectedLabel ?? 'Expected output')}
-      <details><summary>Show a hint</summary><p>${escapeHtml(lesson.hint)}</p></details>
-      <details><summary>Show one solution</summary>${codeBlock(lesson.file, lesson.solution, 'solution code')}</details>
-    </section>
-    <section class="lesson-section check" aria-labelledby="check-title">
+    ${lesson.question ? `<section class="lesson-section check" aria-labelledby="check-title">
       <h2 id="check-title">Quick check</h2>
       <form id="quick-check">
         <fieldset>
@@ -118,19 +145,23 @@ function renderLesson(lesson, moveFocus = false) {
         <button class="button" type="submit">Check answer</button>
         <p class="feedback" role="status"></p>
       </form>
-    </section>
-    ${allDone ? '<p id="course-complete" class="lesson-section course-complete" tabindex="-1"><strong>Course complete.</strong> You wrote scripts that take input, repeat work, and save a report.</p>' : ''}
+    </section>` : ''}
+    ${lesson.unit.references ? `<details class="lesson-section setup">
+      <summary>Unit reference</summary>
+      <ul>${lesson.unit.references.map(([title, url]) => `<li><a href="${escapeHtml(url)}">${escapeHtml(title)}</a></li>`).join('')}</ul>
+    </details>` : ''}
+    ${allDone ? '<p id="course-complete" class="lesson-section course-complete" tabindex="-1"><strong>Course complete.</strong> You finished every unit and challenge.</p>' : ''}
     <footer class="lesson-footer">
-      ${previous ? `<a class="button" href="#${previous.id}">← Previous lesson</a>` : ''}
+      ${previous ? `<a class="button" href="#${previous.id}">← Previous</a>` : ''}
       ${done
-        ? (next ? `<a class="button primary forward" href="#${next.id}">Next lesson →</a>` : '<span class="forward">Lesson complete ✓</span>')
-        : `<button class="button primary forward" id="complete-lesson" type="button">${next ? 'Mark complete and continue →' : 'Mark lesson complete'}</button>`}
+        ? (next ? `<a class="button primary forward" href="#${next.id}">Continue →</a>` : '<span class="forward">Completed ✓</span>')
+        : `<button class="button primary forward" id="complete-lesson" type="button">${next ? 'Mark complete and continue →' : 'Mark complete'}</button>`}
     </footer>`;
 
   const check = document.querySelector('#quick-check');
-  const feedback = check.querySelector('.feedback');
-  check.addEventListener('change', () => { feedback.textContent = ''; });
-  check.addEventListener('submit', (event) => {
+  const feedback = check?.querySelector('.feedback');
+  check?.addEventListener('change', () => { feedback.textContent = ''; });
+  check?.addEventListener('submit', (event) => {
     event.preventDefault();
     const selected = new FormData(event.currentTarget).get('answer');
     const correct = selected === String(lesson.correct);
